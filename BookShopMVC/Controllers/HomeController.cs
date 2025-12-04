@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using BookShopMVC.Models;
+using BookShopMVC.Models.DTOs;
 using Microsoft.AspNetCore.Mvc;
 
 namespace BookShopMVC.Controllers
@@ -14,10 +15,17 @@ namespace BookShopMVC.Controllers
             _logger = logger;
             _homeRepository = homeRepository;
         }
+        //the parameters should be the same in the method and in the view(index.cshtml(name and id))
         public async Task<IActionResult> Index(string sTerm = "", int genreId = 0)
         {
             IEnumerable<Book> books = await _homeRepository.GetBooks(sTerm, genreId);
-            return View(books);
+            IEnumerable<Genre> genres = await _homeRepository.GetGenres();
+            BookDisplayModel bookModal = new BookDisplayModel
+            {
+                Books = books,
+                Genres = genres
+            };
+            return View(bookModal);
         }
 
         public IActionResult Privacy()

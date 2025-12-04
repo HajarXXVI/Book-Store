@@ -12,6 +12,11 @@ namespace BookShopMVC.Repositories
             _db = db;
         }
 
+        public async Task<IEnumerable<Genre>> GetGenres()
+        {
+            return await _db.Genres.ToListAsync();
+        }
+
         public async Task<IEnumerable<Book>> GetBooks(string sTerm = "", int genreId = 0)
         {
             sTerm = sTerm.ToLower();
