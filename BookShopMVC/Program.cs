@@ -1,5 +1,4 @@
-using BookShopMVC.Data;
-using BookShopMVC.Models;
+using BookShopMVC;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 
@@ -16,6 +15,9 @@ builder.Services.AddIdentity<IdentityUser, IdentityRole>(options => options.Sign
     .AddDefaultUI()
     .AddDefaultTokenProviders();
 builder.Services.AddControllersWithViews();
+
+//To help the injection of the Home Repository to the Home Controller
+builder.Services.AddTransient<IHomeRepository, HomeRepository>();
 
 var app = builder.Build();
 using (var scope = app.Services.CreateScope())
