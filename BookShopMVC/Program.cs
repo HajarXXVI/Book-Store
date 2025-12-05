@@ -16,8 +16,9 @@ builder.Services.AddIdentity<IdentityUser, IdentityRole>(options => options.Sign
     .AddDefaultTokenProviders();
 builder.Services.AddControllersWithViews();
 
-//To help the injection of the Home Repository to the Home Controller
+//To help the injection of the Repositories to the Home Controller
 builder.Services.AddTransient<IHomeRepository, HomeRepository>();
+builder.Services.AddTransient<ICartRepository, CartRepository>();
 
 var app = builder.Build();
 using (var scope = app.Services.CreateScope())

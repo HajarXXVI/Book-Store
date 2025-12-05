@@ -23,7 +23,9 @@ namespace BookShopMVC.Controllers
             BookDisplayModel bookModal = new BookDisplayModel
             {
                 Books = books,
-                Genres = genres
+                Genres = genres,
+                STerm = sTerm,
+                GenreId = genreId
             };
             return View(bookModal);
         }
