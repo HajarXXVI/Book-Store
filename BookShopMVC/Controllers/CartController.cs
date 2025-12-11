@@ -30,13 +30,13 @@ namespace BookShopMVC.Controllers
         public async Task<IActionResult> GetUserCart()
         {
             var cart = await _cartRepo.GetUserCart();
-            return View();
+            return View(cart);
         }
 
         public async Task<IActionResult> GetTotalItemInCart()
         {
-            int cartItemCount = await _cartRepo.GetCartItemCount();
-            return Ok(cartItemCount);
+            int cartItem = await _cartRepo.GetCartItemCount();
+            return Ok(cartItem);
         }
     }
 }
