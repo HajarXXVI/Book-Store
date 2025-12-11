@@ -38,5 +38,6 @@ namespace BookShopMVC.Controllers
             int cartItem = await _cartRepo.GetCartItemCount();
             return Ok(cartItem);
         }
+
     }
 }

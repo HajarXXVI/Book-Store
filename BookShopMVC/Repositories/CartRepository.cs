@@ -50,6 +50,7 @@ namespace BookShopMVC.Repositories
                         BookId = bookId,
                         ShoppingCartID = cart.Id,
                         Quantity = qty,
+                        UnitPrice = book.Price //new line added after the update
                     };
                     _db.CartDetails.Add(cartItem);
                 }
@@ -124,18 +125,107 @@ namespace BookShopMVC.Repositories
 
         public async Task<int> GetCartItemCount(string userId = "")
         {
-            if(string.IsNullOrEmpty(userId))
+            // If a userId wasn't provided, get it from the current context
+            if (string.IsNullOrEmpty(userId))
             {
                 userId = GetUserId();
             }
-            var data = await (from cart in _db.ShoppingCarts
-                              join cartDetail in _db.CartDetails
-                              on cart.Id equals cartDetail.ShoppingCartID
-                              where cart.UserId == userId
-                              select new { cartDetail.Id }
-                              ).ToListAsync();
-            return data.Count;
+
+            if (string.IsNullOrEmpty(userId))
+                return 0;
+
+            var cart = await _db.ShoppingCarts.FirstOrDefaultAsync(c => c.UserId == userId);
+            if (cart == null)
+                return 0;
+
+            // Sum the Quantity values for that cart (returns 0 if no items)
+            var total = await _db.CartDetails
+                                 .Where(cd => cd.ShoppingCartID == cart.Id)
+                                 .SumAsync(cd => (int?)cd.Quantity) ?? 0;
+
+            return total;
         }
+
+
+        public async Task<bool> DoCheckout()
+        {
+            using var transaction = _db.Database.BeginTransaction();
+            try
+            {
+                // logic
+                // move data from cartDetail to order and order detail then we will remove cart detail
+                var userId = GetUserId();
+                if (string.IsNullOrEmpty(userId))
+                    throw new UnauthorizedAccessException("User is not logged-in");
+                var cart = await GetCart(userId);
+                if (cart is null)
+                    throw new InvalidOperationException("Invalid cart");
+                var cartDetail = _db.CartDetails
+                                    .Where(a => a.ShoppingCartID == cart.Id).ToList();
+                if (cartDetail.Count == 0)
+                    throw new InvalidOperationException("Cart is empty");
+                //var pendingRecord = _db.OrderStatuses.FirstOrDefault(s => s.StatusName == "Pending");
+                //if (pendingRecord is null)
+                //    throw new InvalidOperationException("Order status does not have Pending status");
+                var order = new Order
+                {
+                    UserId = userId,
+                    CreateDate = DateTime.UtcNow,
+                    //Name = model.Name,
+                    //Email = model.Email,
+                    //MobileNumber = model.MobileNumber,
+                    //PaymentMethod = model.PaymentMethod,
+                    //Address = model.Address,
+                    //IsPaid = false,
+                    OrderStatusId = 1 //Pending
+                };
+                _db.Orders.Add(order);
+                _db.SaveChanges();
+                foreach (var item in cartDetail)
+                {
+                    var orderDetail = new OrderDetail
+                    {
+                        BookId = item.BookId,
+                        OrderId = order.Id,
+                        Quantity = item.Quantity,
+                        UnitPrice = item.UnitPrice
+                    };
+                    _db.OrderDetails.Add(orderDetail);
+
+                    // update stock here
+
+                    //    var stock = await _db.Stocks.FirstOrDefaultAsync(a => a.BookId == item.BookId);
+                    //    if (stock == null)
+                    //    {
+                    //        throw new InvalidOperationException("Stock is null");
+                    //    }
+
+                    //    if (item.Quantity > stock.Quantity)
+                    //    {
+                    //        throw new InvalidOperationException($"Only {stock.Quantity} items(s) are available in the stock");
+                    //    }
+                    //    // decrease the number of quantity from the stock table
+                    //    stock.Quantity -= item.Quantity;
+                    //}
+                    ////_db.SaveChanges();
+
+                    //// removing the cartdetails
+                    
+                }
+                _db.SaveChanges();
+
+                _db.CartDetails.RemoveRange(cartDetail);
+                _db.SaveChanges();
+                transaction.Commit();
+                return true;
+            }
+            catch (Exception ex)
+            {
+                throw;
+                //return false;
+            }
+        }
+
 
         private string GetUserId()
         {

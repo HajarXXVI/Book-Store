@@ -73,6 +73,9 @@ namespace BookShopMVC.Data.Migrations
                     b.Property<int>("ShoppingCartID")
                         .HasColumnType("int");
 
+                    b.Property<double>("UnitPrice")
+                        .HasColumnType("float");
+
                     b.HasKey("Id");
 
                     b.HasIndex("BookId");
@@ -416,7 +419,7 @@ namespace BookShopMVC.Data.Migrations
                         .IsRequired();
 
                     b.HasOne("BookShopMVC.Models.ShoppingCart", "ShoppingCart")
-                        .WithMany()
+                        .WithMany("CartDetails")
                         .HasForeignKey("ShoppingCartID")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
@@ -522,6 +525,11 @@ namespace BookShopMVC.Data.Migrations
             modelBuilder.Entity("BookShopMVC.Models.Order", b =>
                 {
                     b.Navigation("OrderDetail");
+                });
+
+            modelBuilder.Entity("BookShopMVC.Models.ShoppingCart", b =>
+                {
+                    b.Navigation("CartDetails");
                 });
 #pragma warning restore 612, 618
         }
