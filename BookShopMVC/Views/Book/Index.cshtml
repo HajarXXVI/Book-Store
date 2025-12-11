@@ -1,6 +1,6 @@
 ﻿@model IEnumerable<Book>
 @{
-    // Layout = "_AdminLayout";
+    Layout = "_AdminLayout";
 }
 
 <h2>Books</h2>
@@ -25,7 +25,7 @@
                 <td>
                     @if (string.IsNullOrWhiteSpace(book.Image))
                     {
-                        <img src="/Images/NoImage.png" style="width:80px;height:100px" alt="book image" />
+                        <img src="/Images/noImage.jpg" style="width:80px;height:100px" alt="book image" />
                     }
                     else
                     {
