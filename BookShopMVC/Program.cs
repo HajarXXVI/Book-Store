@@ -19,6 +19,7 @@ builder.Services.AddControllersWithViews();
 //To help the injection of the Repositories to the Home Controller
 builder.Services.AddTransient<IHomeRepository, HomeRepository>();
 builder.Services.AddTransient<ICartRepository, CartRepository>();
+builder.Services.AddTransient<IUserOrderRepository, UserOrderRepository>();
 
 var app = builder.Build();
 using (var scope = app.Services.CreateScope())

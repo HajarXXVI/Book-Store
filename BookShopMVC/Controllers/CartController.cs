@@ -39,5 +39,13 @@ namespace BookShopMVC.Controllers
             return Ok(cartItem);
         }
 
+        public async Task<IActionResult> Checkout()
+        {
+            bool isCheckedOut = await _cartRepo.DoCheckout();
+            if (!isCheckedOut)
+                throw new InvalidOperationException("Something happened in server side");
+            return RedirectToAction("Index", "Home");
+        }
+
     }
 }

@@ -44,7 +44,7 @@
 
         <div class="my-2">
             <h5>Total: </h5>
-            @(Model.CartDetails.Select(item => item.Book.Price * item.Quantity).Sum())
+            @(Model.CartDetails.Select(item => item.Book.Price * item.Quantity).Sum().ToString("F2"))
         </div>
 
         <div class="my-2">
