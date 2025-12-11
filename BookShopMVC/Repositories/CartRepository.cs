@@ -1,6 +1,5 @@
 ﻿using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
-using System.Linq;
 
 namespace BookShopMVC.Repositories
 {
@@ -10,13 +9,13 @@ namespace BookShopMVC.Repositories
         private readonly UserManager<IdentityUser> _userManager;
         private readonly IHttpContextAccessor _httpContextAccessor;
 
-        public CartRepository(ApplicationDbContext db, UserManager<IdentityUser> userManager, IHttpContextAccessor httpContextAccessor)
+        public CartRepository(ApplicationDbContext db, IHttpContextAccessor httpContextAccessor,
+            UserManager<IdentityUser> userManager)
         {
             _db = db;
             _userManager = userManager;
             _httpContextAccessor = httpContextAccessor;
         }
-
         public async Task<int> AddItem(int bookId, int qty)
         {
             string userId = GetUserId();
@@ -25,9 +24,8 @@ namespace BookShopMVC.Repositories
             {
                 if (string.IsNullOrEmpty(userId))
                     throw new UnauthorizedAccessException("user is not logged-in");
-
                 var cart = await GetCart(userId);
-                if (cart == null)
+                if (cart is null)
                 {
                     cart = new ShoppingCart
                     {
@@ -36,9 +34,10 @@ namespace BookShopMVC.Repositories
                     _db.ShoppingCarts.Add(cart);
                 }
                 _db.SaveChanges();
-                //cart detail section
-                var cartItem = _db.CartDetails.FirstOrDefault(x => x.ShoppingCartID == cart.Id && x.BookId == bookId);
-                if(cartItem is not null)
+                // cart detail section
+                var cartItem = _db.CartDetails
+                                  .FirstOrDefault(a => a.ShoppingCartID == cart.Id && a.BookId == bookId);
+                if (cartItem is not null)
                 {
                     cartItem.Quantity += qty;
                 }
@@ -50,7 +49,7 @@ namespace BookShopMVC.Repositories
                         BookId = bookId,
                         ShoppingCartID = cart.Id,
                         Quantity = qty,
-                        UnitPrice = book.Price //new line added after the update
+                        UnitPrice = book.Price  // it is a new line after update
                     };
                     _db.CartDetails.Add(cartItem);
                 }
@@ -64,38 +63,32 @@ namespace BookShopMVC.Repositories
             return cartItemCount;
         }
 
+
         public async Task<int> RemoveItem(int bookId)
         {
-            string userId = GetUserId();
             //using var transaction = _db.Database.BeginTransaction();
+            string userId = GetUserId();
             try
             {
                 if (string.IsNullOrEmpty(userId))
                     throw new UnauthorizedAccessException("user is not logged-in");
-
                 var cart = await GetCart(userId);
-
-                //the user should have a cart to be able to remove an item
-                if (cart == null)
+                if (cart is null)
                     throw new InvalidOperationException("Invalid cart");
-
-                //_db.SaveChanges();
-
-                //cart detail section
-                var cartItem = _db.CartDetails.FirstOrDefault(x => x.ShoppingCartID == cart.Id && x.BookId == bookId);
-                
-                if(cartItem is null)
+                // cart detail section
+                var cartItem = _db.CartDetails
+                                  .FirstOrDefault(a => a.ShoppingCartID == cart.Id && a.BookId == bookId);
+                if (cartItem is null)
                     throw new InvalidOperationException("Not items in cart");
-                else if (cartItem.Quantity==1)
+                else if (cartItem.Quantity == 1)
                     _db.CartDetails.Remove(cartItem);
                 else
                     cartItem.Quantity = cartItem.Quantity - 1;
-
                 _db.SaveChanges();
-                //transaction.Commit();
             }
             catch (Exception ex)
             {
+
             }
             var cartItemCount = await GetCartItemCount(userId);
             return cartItemCount;
@@ -104,19 +97,19 @@ namespace BookShopMVC.Repositories
         public async Task<ShoppingCart> GetUserCart()
         {
             var userId = GetUserId();
-            if(userId is null)
-            {
+            if (userId == null)
                 throw new InvalidOperationException("Invalid userid");
-            }
             var shoppingCart = await _db.ShoppingCarts
-                                .Include(c => c.CartDetails)
-                                .ThenInclude(cd => cd.Book)
-                                .ThenInclude(g => g.Genre)
-                                .Where(c => c.UserId == userId)
-                                .FirstOrDefaultAsync();
+                                  .Include(a => a.CartDetails)
+                                  .ThenInclude(a => a.Book)
+                                  .ThenInclude(a => a.Stock)
+                                  .Include(a => a.CartDetails)
+                                  .ThenInclude(a => a.Book)
+                                  .ThenInclude(a => a.Genre)
+                                  .Where(a => a.UserId == userId).FirstOrDefaultAsync();
             return shoppingCart;
-        }
 
+        }
         public async Task<ShoppingCart> GetCart(string userId)
         {
             var cart = await _db.ShoppingCarts.FirstOrDefaultAsync(x => x.UserId == userId);
@@ -125,27 +118,18 @@ namespace BookShopMVC.Repositories
 
         public async Task<int> GetCartItemCount(string userId = "")
         {
-            // If a userId wasn't provided, get it from the current context
-            if (string.IsNullOrEmpty(userId))
+            if (string.IsNullOrEmpty(userId)) // updated line
             {
                 userId = GetUserId();
             }
-
-            if (string.IsNullOrEmpty(userId))
-                return 0;
-
-            var cart = await _db.ShoppingCarts.FirstOrDefaultAsync(c => c.UserId == userId);
-            if (cart == null)
-                return 0;
-
-            // Sum the Quantity values for that cart (returns 0 if no items)
-            var total = await _db.CartDetails
-                                 .Where(cd => cd.ShoppingCartID == cart.Id)
-                                 .SumAsync(cd => (int?)cd.Quantity) ?? 0;
-
-            return total;
+            var data = await (from cart in _db.ShoppingCarts
+                              join cartDetail in _db.CartDetails
+                              on cart.Id equals cartDetail.ShoppingCartID
+                              where cart.UserId == userId // updated line
+                              select new { cartDetail.Id }
+                        ).ToListAsync();
+            return data.Count;
         }
-
 
         public async Task<bool> DoCheckout(CheckoutModel model)
         {
@@ -171,14 +155,13 @@ namespace BookShopMVC.Repositories
                 {
                     UserId = userId,
                     CreateDate = DateTime.UtcNow,
-                    OrderStatusId = pendingRecord.Id,
                     Name = model.Name,
                     Email = model.Email,
                     MobileNumber = model.MobileNumber,
                     PaymentMethod = model.PaymentMethod,
                     Address = model.Address,
                     IsPaid = false,
-                    
+                    OrderStatusId = pendingRecord.Id
                 };
                 _db.Orders.Add(order);
                 _db.SaveChanges();
@@ -194,27 +177,22 @@ namespace BookShopMVC.Repositories
                     _db.OrderDetails.Add(orderDetail);
 
                     // update stock here
+                    var stock = await _db.Stocks.FirstOrDefaultAsync(a => a.BookId == item.BookId);
+                    if (stock == null)
+                    {
+                        throw new InvalidOperationException("Stock is null");
+                    }
 
-                    //    var stock = await _db.Stocks.FirstOrDefaultAsync(a => a.BookId == item.BookId);
-                    //    if (stock == null)
-                    //    {
-                    //        throw new InvalidOperationException("Stock is null");
-                    //    }
-
-                    //    if (item.Quantity > stock.Quantity)
-                    //    {
-                    //        throw new InvalidOperationException($"Only {stock.Quantity} items(s) are available in the stock");
-                    //    }
-                    //    // decrease the number of quantity from the stock table
-                    //    stock.Quantity -= item.Quantity;
-                    //}
-                    ////_db.SaveChanges();
-
-                    //// removing the cartdetails
-                    
+                    if (item.Quantity > stock.Quantity)
+                    {
+                        throw new InvalidOperationException($"Only {stock.Quantity} items(s) are available in the stock");
+                    }
+                    // decrease the number of quantity from the stock table
+                    stock.Quantity -= item.Quantity;
                 }
-                _db.SaveChanges();
+                //_db.SaveChanges();
 
+                // removing the cartdetails
                 _db.CartDetails.RemoveRange(cartDetail);
                 _db.SaveChanges();
                 transaction.Commit();
@@ -222,17 +200,18 @@ namespace BookShopMVC.Repositories
             }
             catch (Exception ex)
             {
-                throw;
-                //return false;
+
+                return false;
             }
         }
 
-
         private string GetUserId()
         {
-            var userId = _userManager.GetUserId(_httpContextAccessor.HttpContext.User);
+            var principal = _httpContextAccessor.HttpContext.User;
+            string userId = _userManager.GetUserId(principal);
             return userId;
         }
+
 
     }
 }

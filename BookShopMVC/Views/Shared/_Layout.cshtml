@@ -29,9 +29,15 @@
                     </li>
                     @if (User.IsInRole(Roles.Admin.ToString()))
                         {
-                        <li class="nav-item">
-                            <a class="nav-link" href="/AdminOperations/AllOrders">Orders</a>
-                        </li>
+                            <li class="nav-item">
+                                <a class="nav-link" href="/AdminOperations/AllOrders">Orders</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" href="/Stock/Index">Stock</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" href="/Genre/Index">Genre</a>
+                            </li>
                         }
                         
 
@@ -52,6 +58,9 @@
         </div>
     </nav>
     <div class="container">
+        <div class="my-2">
+            <partial name="_Notifications" />
+        </div>
         @RenderBody()
     </div>
 </body>

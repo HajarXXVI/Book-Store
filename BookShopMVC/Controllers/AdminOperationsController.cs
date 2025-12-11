@@ -28,22 +28,22 @@ namespace BookShopMVC.Controllers
             }
             catch (Exception ex)
             {
+                // log exception here
             }
             return RedirectToAction(nameof(AllOrders));
         }
 
-        public async Task<IActionResult> UpdatePaymentStatus(int orderId)
+        public async Task<IActionResult> UpdateOrderStatus(int orderId)
         {
             var order = await _userOrderRepository.GetOrderById(orderId);
             if (order == null)
             {
-                throw new InvalidOperationException($"Order with Id:{orderId} does not found.");
+                throw new InvalidOperationException($"Order with id:{orderId} does not found.");
             }
             var orderStatusList = (await _userOrderRepository.GetOrderStatuses()).Select(orderStatus =>
             {
                 return new SelectListItem { Value = orderStatus.Id.ToString(), Text = orderStatus.StatusName, Selected = order.OrderStatusId == orderStatus.Id };
             });
-            //Value = Value of the DropdownList, Text = Displayed Text in DropdownList, Selected = Selected text in DropdownList
             var data = new UpdateOrderStatusModel
             {
                 OrderId = orderId,
@@ -54,7 +54,7 @@ namespace BookShopMVC.Controllers
         }
 
         [HttpPost]
-        public async Task<IActionResult> UpdatePaymentStatus(UpdateOrderStatusModel data)
+        public async Task<IActionResult> UpdateOrderStatus(UpdateOrderStatusModel data)
         {
             try
             {
@@ -72,9 +72,10 @@ namespace BookShopMVC.Controllers
             }
             catch (Exception ex)
             {
+                // catch exception here
                 TempData["msg"] = "Something went wrong";
             }
-            return RedirectToAction(nameof(UpdatePaymentStatus), new { orderId = data.OrderId });
+            return RedirectToAction(nameof(UpdateOrderStatus), new { orderId = data.OrderId });
         }
 
 
@@ -82,5 +83,6 @@ namespace BookShopMVC.Controllers
         //{
         //    return View();
         //}
+
     }
 }

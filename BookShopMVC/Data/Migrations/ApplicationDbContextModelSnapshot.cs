@@ -228,6 +228,28 @@ namespace BookShopMVC.Data.Migrations
                     b.ToTable("ShoppingCart");
                 });
 
+            modelBuilder.Entity("BookShopMVC.Models.Stock", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("BookId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("Quantity")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("BookId")
+                        .IsUnique();
+
+                    b.ToTable("Stock");
+                });
+
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRole", b =>
                 {
                     b.Property<string>("Id")
@@ -486,6 +508,17 @@ namespace BookShopMVC.Data.Migrations
                     b.Navigation("Order");
                 });
 
+            modelBuilder.Entity("BookShopMVC.Models.Stock", b =>
+                {
+                    b.HasOne("BookShopMVC.Models.Book", "Book")
+                        .WithOne("Stock")
+                        .HasForeignKey("BookShopMVC.Models.Stock", "BookId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Book");
+                });
+
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<string>", b =>
                 {
                     b.HasOne("Microsoft.AspNetCore.Identity.IdentityRole", null)
@@ -542,6 +575,9 @@ namespace BookShopMVC.Data.Migrations
                     b.Navigation("CartDetail");
 
                     b.Navigation("OrderDetail");
+
+                    b.Navigation("Stock")
+                        .IsRequired();
                 });
 
             modelBuilder.Entity("BookShopMVC.Models.Genre", b =>

@@ -23,6 +23,10 @@ namespace BookShopMVC.Repositories
             IEnumerable<Book> books = await (from book in _db.Books
                                              join genre in _db.Genres
                                              on book.GenreId equals genre.Id
+                                             join stock in _db.Stocks
+                                             on book.Id equals stock.BookId
+                                             into book_stocks
+                                             from bookWithStock in book_stocks.DefaultIfEmpty()
                                              where string.IsNullOrWhiteSpace(sTerm) || (book != null && book.BookName.ToLower().StartsWith(sTerm))
                                              select new Book
                                                 {
@@ -32,8 +36,9 @@ namespace BookShopMVC.Repositories
                                                     Price = book.Price,
                                                     Image = book.Image,
                                                     GenreId = book.GenreId,
-                                                    GenreName = genre.GenreName
-                                                }
+                                                    GenreName = genre.GenreName,
+                                                    Quantity = bookWithStock == null ? 0 : bookWithStock.Quantity
+                                             }
                                              ).ToListAsync();
             if (genreId > 0)
             {
